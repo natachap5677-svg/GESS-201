@@ -112,9 +112,7 @@
                         <h3 class="text-lg font-bold text-gray-900"><i class="fa-regular fa-calendar-alt text-blue-600 mr-2"></i> ปฏิทินการใช้งานเครื่องมือ</h3>
                         <select id="calendar-filter" class="form-input py-1.5 w-auto" onchange="filterCalendar()">
                             <option value="all">แสดงทั้งหมด</option>
-                            <option value="เครื่องวัดความหนืด">เครื่องวัดความหนืด</option>
-                            <option value="เครื่องวัดความหนาแน่น">เครื่องวัดความหนาแน่น</option>
-                            <option value="หัวกวน">หัวกวน</option>
+                            <!-- ตัวเลือกเครื่องจะถูกโหลดมาใส่ตรงนี้โดยอัตโนมัติ -->
                         </select>
                     </div>
                     <div id="calendar" class="w-full min-h-[450px]"></div>
@@ -184,8 +182,35 @@
                         <div><label class="block text-sm font-bold text-gray-700 mb-1.5">Email *</label><input type="email" name="email" required class="form-input"></div>
                         <div class="md:col-span-2"><label class="block text-sm font-bold text-gray-700 mb-1.5">วัตถุประสงค์ *</label><textarea name="objective" required rows="2" class="form-input"></textarea></div>
                         <div class="md:col-span-2"><label class="block text-sm font-bold text-gray-700 mb-1.5">วิชา/โปรเจค *</label><input type="text" name="subject" required class="form-input"></div>
-                        <div><label class="block text-sm font-bold text-gray-700 mb-1.5">อาจารย์ที่ปรึกษา *</label><select name="advisor" required class="form-input"><option value="" disabled selected>-- เลือกอาจารย์ --</option><option value="รศ.ดร.ไชยยันต์ ไชยยะ">รศ.ดร.ไชยยันต์ ไชยยะ</option><option value="รศ.ดร.ศศิรดี จันทสี">รศ.ดร.ศศิรดี จันทสี</option></select></div>
-                        <div><label class="block text-sm font-bold text-gray-700 mb-1.5">รายการเครื่องมือ *</label><select name="equipment" required class="form-input"><option value="" disabled selected>-- เลือกเครื่องมือ --</option><option value="เครื่องวัดความหนืด">เครื่องวัดความหนืด</option><option value="เครื่องวัดความหนาแน่น">เครื่องวัดความหนาแน่น</option><option value="หัวกวน">หัวกวน</option></select></div>
+                        
+                        <!-- นำรายชื่ออาจารย์ 12 ท่าน กลับมาทั้งหมด -->
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-1.5">อาจารย์ที่ปรึกษา *</label>
+                            <select name="advisor" required class="form-input">
+                                <option value="" disabled selected>-- เลือกอาจารย์ --</option>
+                                <option value="รศ.ดร.ไชยยันต์ ไชยยะ">รศ.ดร.ไชยยันต์ ไชยยะ</option>
+                                <option value="รศ.ดร.ศศิรดี จันทสี">รศ.ดร.ศศิรดี จันทสี</option>
+                                <option value="อาจารย์พุทธิพร เทียมสินสังวร">อาจารย์พุทธิพร เทียมสินสังวร</option>
+                                <option value="รศ.ดร.ธีระวัฒน์ เหมือนศรีชัย">รศ.ดร.ธีระวัฒน์ เหมือนศรีชัย</option>
+                                <option value="รศ.ดร.ณัฐชา เพ็ชร์ยิ้ม">รศ.ดร.ณัฐชา เพ็ชร์ยิ้ม</option>
+                                <option value="ผศ.ดร.รินลดา สิริแสงสว่าง">ผศ.ดร.รินลดา สิริแสงสว่าง</option>
+                                <option value="ผศ.ยรรยง สุขคล้าย">ผศ.ยรรยง สุขคล้าย</option>
+                                <option value="รศ.ศราวุธ จิตต์พินิจ">รศ.ศราวุธ จิตต์พินิจ</option>
+                                <option value="รศ.ดร.วีราภรณ์ ผิวสอาด">รศ.ดร.วีราภรณ์ ผิวสอาด</option>
+                                <option value="ผศ.ดร.ชัยภพ ศิระวรกุล">ผศ.ดร.ชัยภพ ศิระวรกุล</option>
+                                <option value="รศ.ดร.วีรินทร์ดา เมนส์">รศ.ดร.วีรินทร์ดา เมนส์</option>
+                                <option value="อาจารย์นวพร เพิ่มสมบัติ">อาจารย์นวพร เพิ่มสมบัติ</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Dropdown นี้จะถูกเพิ่มรายการจาก Sheet อัตโนมัติด้วย JavaScript -->
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-1.5">รายการเครื่องมือ *</label>
+                            <select name="equipment" id="equip-select" required class="form-input">
+                                <option value="" disabled selected>-- กำลังโหลดรายการ... --</option>
+                            </select>
+                        </div>
+                        
                         <div><label class="block text-sm font-bold text-gray-700 mb-1.5">เริ่มจอง *</label><input type="datetime-local" name="start_time" required class="form-input"></div>
                         <div><label class="block text-sm font-bold text-gray-700 mb-1.5">ใช้เสร็จ *</label><input type="datetime-local" name="end_time" required class="form-input"></div>
                     </div>
@@ -236,6 +261,9 @@
                 // เรนเดอร์กล่องประกาศ
                 renderAnnouncements(data.announcements || []);
                 
+                // จัดการรายชื่อเครื่องจักรไปใส่ใน Dropdown ทั้ง 2 จุด
+                populateMachineDropdowns(data.machines || []);
+                
                 allCalendarEvents = data.events || [];
                 allCalendarCards = data.cards || [];
                 
@@ -245,7 +273,26 @@
                 syncUI.innerHTML = `<i class="fa-solid fa-circle-check text-green-500 text-sm"></i><span class="text-sm font-semibold text-gray-600">Online</span>`;
             } catch (error) {
                 syncUI.innerHTML = `<i class="fa-solid fa-circle-exclamation text-red-500 text-sm"></i><span class="text-sm font-semibold text-gray-600">Offline</span>`;
-                document.getElementById('announcement-container').innerHTML = '<p class="text-sm text-red-500 text-center">ไม่สามารถโหลดประกาศได้</p>';
+                document.getElementById('announcement-container').innerHTML = '<p class="text-sm text-red-500 text-center">ไม่สามารถโหลดข้อมูลได้</p>';
+            }
+        }
+
+        // ฟังก์ชันใส่รายชื่อเครื่องจักรลง Dropdown อัตโนมัติ
+        function populateMachineDropdowns(machines) {
+            const equipSelect = document.getElementById('equip-select');
+            const calendarFilter = document.getElementById('calendar-filter');
+            
+            // รีเซ็ตค่าเริ่มต้น
+            equipSelect.innerHTML = '<option value="" disabled selected>-- เลือกเครื่องมือ --</option>';
+            calendarFilter.innerHTML = '<option value="all">แสดงทั้งหมด</option>';
+            
+            if (machines.length > 0) {
+                machines.forEach(machine => {
+                    equipSelect.innerHTML += `<option value="${machine}">${machine}</option>`;
+                    calendarFilter.innerHTML += `<option value="${machine}">${machine}</option>`;
+                });
+            } else {
+                equipSelect.innerHTML = '<option value="" disabled selected>-- ไม่มีข้อมูลในฐานระบบ --</option>';
             }
         }
 
@@ -322,7 +369,7 @@
                         <div class="pl-2">
                             <div class="flex justify-between items-start mb-2">
                                 <h4 class="font-black text-gray-900 text-sm">${card.id}</h4>
-                                <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-gray-100 text-gray-600">${card.machine}</span>
+                                <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-100 text-blue-700">${card.machine}</span>
                             </div>
                             <p class="text-xs text-gray-600 mb-1"><i class="fa-solid fa-user text-gray-400 w-4"></i> ผู้จอง: ${card.name}</p>
                             <p class="text-xs text-gray-600 mb-1"><i class="fa-regular fa-clock text-gray-400 w-4"></i> เริ่ม: ${s}</p>
