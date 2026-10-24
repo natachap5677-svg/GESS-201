@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GESS Lab - Dashboard</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.9/index.global.min.js"></script>
+
+    <style>
+        body { font-family: 'Prompt', sans-serif; background-color: #f8fafc; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .form-input { width: 100%; padding: 0.6rem 1rem; border-radius: 0.5rem; border: 1px solid #e2e8f0; background-color: #f8fafc; transition: all 0.2s; font-size: 0.95rem; }
+        .form-input:focus { outline: none; border-color: #3b82f6; background-color: #ffffff; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
+        .nav-link.active { background-color: #eff6ff; color: #2563eb; font-weight: 600; border-right: 4px solid #2563eb; }
+        .fc { font-family: 'Prompt', sans-serif; font-size: 0.85rem;}
+        .fc-toolbar-title { font-size: 1.25rem !important; font-weight: 700; color: #1e293b;}
+        .fc-button-primary { background-color: #ffffff !important; color: #3b82f6 !important; border: 1px solid #cbd5e1 !important; border-radius: 0.5rem !important; font-weight: 600 !important; text-transform: capitalize !important;}
+        .fc-button-active { background-color: #eff6ff !important; border-color: #3b82f6 !important;}
+        .fc-event { border: none !important; border-radius: 4px; padding: 3px 6px; cursor: pointer; color: white !important; font-weight: 500; font-size: 0.75rem;}
+        .fc-daygrid-event-dot { display: none !important; }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden text-gray-800 antialiased" onload="loadDashboardData()">
+
+    <div id="mobile-overlay" class="fixed inset-0 bg-gray-900/50 z-40 hidden md:hidden transition-opacity opacity-0" onclick="toggleSidebar()"></div>
+
+    <!-- Sidebar -->
+    <aside id="sidebar" class="fixed inset-y-0 left-0 w-64 bg-white border-r border-gray-100 z-50 transform -translate-x-full md:translate-x-0 md:static md:flex flex-col transition-transform duration-300">
+        <div class="h-20 flex items-center gap-3 px-6 border-b border-gray-100">
+            <div class="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl flex items-center justify-center text-white shadow-lg"><i class="fa-solid fa-microscope text-xl"></i></div>
+            <div><h1 class="text-xl font-bold text-gray-900 leading-tight">GESS Lab</h1><p class="text-[10px] text-gray-500 font-semibold tracking-wider uppercase">Portal System</p></div>
+        </div>
+        <nav class="flex-1 overflow-y-auto py-6 px-3 flex flex-col gap-1">
+            <p class="px-3 text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Menu</p>
+            <a href="#" onclick="switchTab('dashboard', this)" class="nav-link active flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-50"><i class="fa-solid fa-chart-pie w-5 text-center"></i> <span>Dashboard</span></a>
+            <a href="#" onclick="openModal('modal-scan')" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-50"><i class="fa-solid fa-fingerprint w-5 text-center"></i> <span>ขอสแกนนิ้ว</span></a>
+            <a href="#" onclick="openModal('modal-equip')" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-50"><i class="fa-solid fa-flask-vial w-5 text-center"></i> <span>จองเครื่องมือ</span></a>
+            <a href="#" onclick="switchTab('calendar', this)" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-50"><i class="fa-regular fa-calendar-alt w-5 text-center"></i> <span>ปฏิทินการใช้งาน</span></a>
+            <div class="mt-8">
+                <p class="px-3 text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Support</p>
+                <a href="#" onclick="openModal('modal-track')" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-50"><i class="fa-solid fa-magnifying-glass-chart w-5 text-center"></i> <span>ติดตามสถานะ</span></a>
+            </div>
+        </nav>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 flex flex-col min-w-0 overflow-hidden bg-[#f8fafc]">
+        <header class="h-20 bg-white/80 backdrop-blur-md border-b border-gray-100 flex items-center justify-between px-4 sm:px-8 z-10">
+            <div class="flex items-center gap-4">
+                <button onclick="toggleSidebar()" class="md:hidden text-gray-500 hover:text-blue-600 text-xl"><i class="fa-solid fa-bars"></i></button>
+                <h2 id="page-title" class="text-xl sm:text-2xl font-bold text-gray-800">Overview</h2>
+            </div>
+            <div id="sync-status" class="hidden sm:flex items-center gap-2 bg-gray-100 px-4 py-2 rounded-full">
+                <i class="fa-solid fa-arrows-rotate fa-spin text-gray-400 text-sm"></i><span class="text-sm font-semibold text-gray-500">Syncing...</span>
+            </div>
+        </header>
+
+        <div class="flex-1 overflow-y-auto p-4 sm:p-8">
+            
+            <!-- VIEW: Dashboard -->
+            <div id="view-dashboard" class="max-w-7xl mx-auto space-y-8 animate-fade-in block">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex items-center justify-between">
+                        <div><p class="text-sm font-bold text-gray-500 mb-1">คำร้องทั้งหมด</p><h3 class="text-3xl font-black text-gray-900" id="dash-total">-</h3></div>
+                        <div class="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center text-2xl"><i class="fa-solid fa-layer-group"></i></div>
+                    </div>
+                    <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex items-center justify-between">
+                        <div><p class="text-sm font-bold text-gray-500 mb-1">อนุมัติแล้ว</p><h3 class="text-3xl font-black text-gray-900" id="dash-approved">-</h3></div>
+                        <div class="w-14 h-14 rounded-2xl bg-green-50 text-green-600 flex items-center justify-center text-2xl"><i class="fa-solid fa-check-double"></i></div>
+                    </div>
+                    <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex items-center justify-between">
+                        <div><p class="text-sm font-bold text-gray-500 mb-1">รอการอนุมัติ</p><h3 class="text-3xl font-black text-gray-900" id="dash-pending">-</h3></div>
+                        <div class="w-14 h-14 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center text-2xl"><i class="fa-solid fa-hourglass-half"></i></div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- ส่วนประกาศที่ดึงจาก Sheet -->
+                    <div class="lg:col-span-2 bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                        <h3 class="text-lg font-bold text-gray-900 mb-6">ประกาศจากห้องปฏิบัติการ</h3>
+                        <div id="announcement-container" class="space-y-4 max-h-[300px] overflow-y-auto pr-2">
+                            <div class="text-center text-gray-400 py-4"><i class="fa-solid fa-spinner fa-spin text-xl"></i><p class="text-sm mt-2">กำลังโหลดประกาศ...</p></div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                        <h3 class="text-lg font-bold text-gray-900 mb-6">Quick Actions</h3>
+                        <div class="space-y-3">
+                            <button onclick="openModal('modal-scan')" class="w-full flex items-center justify-between p-4 rounded-xl border border-gray-100 hover:border-blue-300 transition-all group">
+                                <div class="flex items-center gap-3"><div class="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center"><i class="fa-solid fa-fingerprint"></i></div><div class="text-left"><p class="font-bold text-sm text-gray-900">ขอสแกนนิ้ว</p></div></div>
+                            </button>
+                            <button onclick="openModal('modal-equip')" class="w-full flex items-center justify-between p-4 rounded-xl border border-gray-100 hover:border-emerald-300 transition-all group">
+                                <div class="flex items-center gap-3"><div class="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center"><i class="fa-solid fa-flask"></i></div><div class="text-left"><p class="font-bold text-sm text-gray-900">จองเครื่องมือ</p></div></div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW: Calendar -->
+            <div id="view-calendar" class="max-w-7xl mx-auto hidden animate-fade-in h-full flex flex-col">
+                <div class="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100 mb-6">
+                    <div class="border-b border-gray-100 pb-4 mb-4 flex justify-between items-center">
+                        <h3 class="text-lg font-bold text-gray-900"><i class="fa-regular fa-calendar-alt text-blue-600 mr-2"></i> ปฏิทินการใช้งานเครื่องมือ</h3>
+                        <select id="calendar-filter" class="form-input py-1.5 w-auto" onchange="filterCalendar()">
+                            <option value="all">แสดงทั้งหมด</option>
+                            <option value="เครื่องวัดความหนืด">เครื่องวัดความหนืด</option>
+                            <option value="เครื่องวัดความหนาแน่น">เครื่องวัดความหนาแน่น</option>
+                            <option value="หัวกวน">หัวกวน</option>
+                        </select>
+                    </div>
+                    <div id="calendar" class="w-full min-h-[450px]"></div>
+                </div>
+                
+                <h3 class="text-md font-bold text-gray-800 mb-4 px-2">ข้อมูลรายการที่อนุมัติแล้ว</h3>
+                <div id="calendar-cards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-10"></div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- ==================== MODALS ==================== -->
+    <div id="modal-container" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-gray-900/40 backdrop-blur-sm opacity-0 transition-opacity" id="modal-backdrop" onclick="closeAllModals()"></div>
+
+        <!-- 1. Modal: สแกนนิ้ว -->
+        <div id="modal-scan" class="modal-content relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl transform scale-95 opacity-0 transition-all flex flex-col max-h-[90vh] hidden">
+            <div class="flex justify-between items-center p-5 border-b border-gray-100">
+                <h2 class="text-lg font-bold text-gray-900">ขอสแกนนิ้ว</h2><button onclick="closeAllModals()" class="text-gray-400 hover:text-red-500 w-8 h-8"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="p-5 overflow-y-auto">
+                <form onsubmit="submitForm(event, 'scan')">
+                    <input type="hidden" name="type" value="fingerprint">
+                    <input type="hidden" name="topic" value="ขอสแกนนิ้ว">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div class="md:col-span-2"><label class="block text-sm font-bold text-gray-700 mb-1.5">ชื่อ-สกุล *</label><input type="text" name="name" required class="form-input"></div>
+                        <div class="md:col-span-2"><label class="block text-sm font-bold text-gray-700 mb-1.5">สถานะผู้แจ้ง *</label>
+                            <select name="status" required class="form-input" onchange="handleStatusChange(this, 'scan-student-fields')">
+                                <option value="" disabled selected>-- เลือกสถานะ --</option><option value="นักศึกษา ป.ตรี">นักศึกษา ป.ตรี</option><option value="นักศึกษา ป.โท">นักศึกษา ป.โท</option><option value="นักศึกษา ป.เอก">นักศึกษา ป.เอก</option><option value="ผู้ช่วยนักวิจัย">ผู้ช่วยนักวิจัย</option><option value="เจ้าหน้าที่">เจ้าหน้าที่</option><option value="อาจารย์">อาจารย์</option><option value="อื่นๆ">อื่นๆ</option>
+                            </select>
+                        </div>
+                        <div id="scan-student-fields" class="hidden md:col-span-2 grid-cols-1 md:grid-cols-2 gap-5 bg-blue-50 p-4 rounded-xl">
+                            <div><label class="block text-sm font-bold text-blue-800 mb-1.5">ชั้นปี</label><select name="year" class="form-input"><option value="">-- เลือก --</option><option value="1">ปี 1</option><option value="2">ปี 2</option><option value="3">ปี 3</option><option value="4">ปี 4</option></select></div>
+                            <div><label class="block text-sm font-bold text-blue-800 mb-1.5">Sec</label><select name="sec" class="form-input"><option value="">-- เลือก --</option><option value="1">Sec 1</option><option value="2">Sec 2</option></select></div>
+                        </div>
+                        <div><label class="block text-sm font-bold text-gray-700 mb-1.5">เบอร์โทรศัพท์ *</label><input type="tel" name="phone" required class="form-input"></div>
+                        <div><label class="block text-sm font-bold text-gray-700 mb-1.5">Email *</label><input type="email" name="email" required class="form-input"></div>
+                        <div class="md:col-span-2"><label class="block text-sm font-bold text-gray-700 mb-1.5">วัตถุประสงค์ *</label><textarea name="objective" required rows="2" class="form-input"></textarea></div>
+                    </div>
+                    <div class="mt-6 flex justify-end"><button type="submit" class="px-6 py-2.5 rounded-xl font-bold text-white bg-blue-600 hover:bg-blue-700">ส่งคำขอ</button></div>
+                </form>
+            </div>
+        </div>
+
+        <!-- 2. Modal: จองเครื่องมือ -->
+        <div id="modal-equip" class="modal-content relative w-full max-w-3xl bg-white rounded-3xl shadow-2xl transform scale-95 opacity-0 transition-all flex flex-col max-h-[95vh] hidden">
+            <div class="flex justify-between items-center p-5 border-b border-gray-100">
+                <h2 class="text-lg font-bold text-gray-900">ฟอร์มขอใช้เครื่องจักร</h2><button onclick="closeAllModals()" class="text-gray-400 hover:text-red-500 w-8 h-8"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="p-5 overflow-y-auto">
+                <form onsubmit="submitForm(event, 'equip')">
+                    <input type="hidden" name="type" value="equipment">
+                    <input type="hidden" name="topic" value="ขอใช้เครื่องจักร">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div class="md:col-span-2"><label class="block text-sm font-bold text-gray-700 mb-1.5">ชื่อ-สกุล *</label><input type="text" name="name" required class="form-input"></div>
+                        <div class="md:col-span-2"><label class="block text-sm font-bold text-gray-700 mb-1.5">สถานะผู้แจ้ง *</label>
+                            <select name="status" required class="form-input" onchange="handleStatusChange(this, 'equip-student-fields')">
+                                <option value="" disabled selected>-- เลือกสถานะ --</option><option value="นักศึกษา ป.ตรี">นักศึกษา ป.ตรี</option><option value="นักศึกษา ป.โท">นักศึกษา ป.โท</option><option value="นักศึกษา ป.เอก">นักศึกษา ป.เอก</option><option value="ผู้ช่วยนักวิจัย">ผู้ช่วยนักวิจัย</option><option value="เจ้าหน้าที่">เจ้าหน้าที่</option><option value="อาจารย์">อาจารย์</option><option value="อื่นๆ">อื่นๆ</option>
+                            </select>
+                        </div>
+                        <div id="equip-student-fields" class="hidden md:col-span-2 grid-cols-1 md:grid-cols-2 gap-5 bg-emerald-50 p-4 rounded-xl">
+                            <div><label class="block text-sm font-bold text-emerald-800 mb-1.5">ชั้นปี</label><select name="year" class="form-input"><option value="">-- เลือก --</option><option value="1">ปี 1</option><option value="2">ปี 2</option><option value="3">ปี 3</option><option value="4">ปี 4</option></select></div>
+                            <div><label class="block text-sm font-bold text-emerald-800 mb-1.5">Sec</label><select name="sec" class="form-input"><option value="">-- เลือก --</option><option value="1">Sec 1</option><option value="2">Sec 2</option></select></div>
+                        </div>
+                        <div><label class="block text-sm font-bold text-gray-700 mb-1.5">เบอร์โทรศัพท์ *</label><input type="tel" name="phone" required class="form-input"></div>
+                        <div><label class="block text-sm font-bold text-gray-700 mb-1.5">Email *</label><input type="email" name="email" required class="form-input"></div>
+                        <div class="md:col-span-2"><label class="block text-sm font-bold text-gray-700 mb-1.5">วัตถุประสงค์ *</label><textarea name="objective" required rows="2" class="form-input"></textarea></div>
+                        <div class="md:col-span-2"><label class="block text-sm font-bold text-gray-700 mb-1.5">วิชา/โปรเจค *</label><input type="text" name="subject" required class="form-input"></div>
+                        <div><label class="block text-sm font-bold text-gray-700 mb-1.5">อาจารย์ที่ปรึกษา *</label><select name="advisor" required class="form-input"><option value="" disabled selected>-- เลือกอาจารย์ --</option><option value="รศ.ดร.ไชยยันต์ ไชยยะ">รศ.ดร.ไชยยันต์ ไชยยะ</option><option value="รศ.ดร.ศศิรดี จันทสี">รศ.ดร.ศศิรดี จันทสี</option></select></div>
+                        <div><label class="block text-sm font-bold text-gray-700 mb-1.5">รายการเครื่องมือ *</label><select name="equipment" required class="form-input"><option value="" disabled selected>-- เลือกเครื่องมือ --</option><option value="เครื่องวัดความหนืด">เครื่องวัดความหนืด</option><option value="เครื่องวัดความหนาแน่น">เครื่องวัดความหนาแน่น</option><option value="หัวกวน">หัวกวน</option></select></div>
+                        <div><label class="block text-sm font-bold text-gray-700 mb-1.5">เริ่มจอง *</label><input type="datetime-local" name="start_time" required class="form-input"></div>
+                        <div><label class="block text-sm font-bold text-gray-700 mb-1.5">ใช้เสร็จ *</label><input type="datetime-local" name="end_time" required class="form-input"></div>
+                    </div>
+                    <div class="mt-6 flex justify-end"><button type="submit" class="px-6 py-2.5 rounded-xl font-bold text-white bg-emerald-600 hover:bg-emerald-700">ส่งคำขอจอง</button></div>
+                </form>
+            </div>
+        </div>
+
+        <!-- 3. Modal: ติดตามสถานะ -->
+        <div id="modal-track" class="modal-content relative w-full max-w-lg bg-white rounded-3xl shadow-2xl transform scale-95 opacity-0 transition-all flex flex-col hidden">
+            <div class="flex justify-between items-center p-5 border-b border-gray-100">
+                <h2 class="text-lg font-bold text-gray-900">ตรวจสอบสถานะคำร้อง</h2><button onclick="closeAllModals()" class="text-gray-400 hover:text-red-500 w-8 h-8"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="p-5 sm:p-6">
+                <p class="text-sm text-gray-500 mb-4">กรอกรหัสงานที่ได้รับตอนส่งคำร้อง (เช่น GESS-123456)</p>
+                <div class="flex gap-2">
+                    <input type="text" id="track-id" class="form-input font-bold" placeholder="GESS-XXXXXX">
+                    <button onclick="checkStatus()" class="bg-gray-900 text-white px-5 rounded-xl font-bold hover:bg-gray-800 transition"><i class="fa-solid fa-arrow-right"></i></button>
+                </div>
+                
+                <div id="track-loading" class="hidden mt-6 text-center text-gray-500"><i class="fa-solid fa-circle-notch fa-spin text-2xl"></i><p class="text-sm mt-2">กำลังค้นหาข้อมูล...</p></div>
+                <div id="track-result" class="mt-6 hidden animate-fade-in"></div>
+            </div>
+        </div>
+    </div>
+
+    <style> .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; } @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } } </style>
+
+    <script>
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby1RfwfBYRBf7RMUtQQ4SK2j9HxdfAHpwqWrgVAAntKq3oTu5E0DBnpcY3bSg2ndlmg/exec'; 
+        
+        let allCalendarEvents = [];
+        let allCalendarCards = [];
+        let calendarInstance = null;
+
+        // ฟังก์ชันดึงข้อมูล Dashboard และปฏิทิน
+        async function loadDashboardData() {
+            const syncUI = document.getElementById('sync-status');
+            syncUI.classList.remove('hidden');
+            try {
+                const response = await fetch(SCRIPT_URL + "?action=getData");
+                const data = await response.json();
+                
+                document.getElementById('dash-total').innerText = data.total || 0;
+                document.getElementById('dash-approved').innerText = data.approved || 0;
+                document.getElementById('dash-pending').innerText = data.pending || 0;
+                
+                // เรนเดอร์กล่องประกาศ
+                renderAnnouncements(data.announcements || []);
+                
+                allCalendarEvents = data.events || [];
+                allCalendarCards = data.cards || [];
+                
+                initCalendar();
+                renderCalendarCards(allCalendarCards);
+
+                syncUI.innerHTML = `<i class="fa-solid fa-circle-check text-green-500 text-sm"></i><span class="text-sm font-semibold text-gray-600">Online</span>`;
+            } catch (error) {
+                syncUI.innerHTML = `<i class="fa-solid fa-circle-exclamation text-red-500 text-sm"></i><span class="text-sm font-semibold text-gray-600">Offline</span>`;
+                document.getElementById('announcement-container').innerHTML = '<p class="text-sm text-red-500 text-center">ไม่สามารถโหลดประกาศได้</p>';
+            }
+        }
+
+        // ฟังก์ชันวาดประกาศ
+        function renderAnnouncements(items) {
+            const container = document.getElementById('announcement-container');
+            container.innerHTML = '';
+            
+            if(items.length === 0) {
+                container.innerHTML = '<p class="text-sm text-gray-500 text-center py-4">ยังไม่มีประกาศใหม่</p>';
+                return;
+            }
+            
+            items.forEach(item => {
+                let isWarning = (item.type === 'ด่วน' || item.type === 'ซ่อมบำรุง' || item.type === 'แจ้งเตือน');
+                let bgClass = isWarning ? 'bg-orange-50 border-orange-100' : 'bg-blue-50/50 border-blue-100';
+                let iconColor = isWarning ? 'text-orange-500' : 'text-blue-500';
+                let iconClass = isWarning ? 'fa-triangle-exclamation' : 'fa-bullhorn';
+                
+                container.innerHTML += `
+                    <div class="p-4 rounded-xl border ${bgClass} flex gap-4 transition-colors hover:shadow-sm">
+                        <div class="mt-1 ${iconColor}"><i class="fa-solid ${iconClass}"></i></div>
+                        <div>
+                            <h4 class="font-bold text-gray-900 text-sm">${item.title}</h4>
+                            <p class="text-sm text-gray-600 mt-1">${item.detail}</p>
+                            ${item.date ? `<p class="text-xs text-gray-400 mt-2">${item.date}</p>` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        // ปฏิทิน
+        function initCalendar() {
+            const calendarEl = document.getElementById('calendar');
+            calendarInstance = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                locale: 'th',
+                headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek' },
+                events: allCalendarEvents,
+                eventDisplay: 'block',
+                eventTimeFormat: { hour: '2-digit', minute: '2-digit', meridiem: false },
+                displayEventTime: true
+            });
+            calendarInstance.render();
+        }
+
+        function filterCalendar() {
+            if(!calendarInstance) return;
+            const filterVal = document.getElementById('calendar-filter').value;
+            
+            let filteredEvents = (filterVal !== 'all') ? allCalendarEvents.filter(e => e.machine === filterVal) : allCalendarEvents;
+            calendarInstance.removeAllEventSources();
+            calendarInstance.addEventSource(filteredEvents);
+            
+            let filteredCards = (filterVal !== 'all') ? allCalendarCards.filter(c => c.machine === filterVal) : allCalendarCards;
+            renderCalendarCards(filteredCards);
+        }
+
+        // เรนเดอร์การ์ดข้อมูลรหัสงานใต้ปฏิทิน
+        function renderCalendarCards(cardsData) {
+            const container = document.getElementById('calendar-cards');
+            container.innerHTML = '';
+            if(cardsData.length === 0) {
+                container.innerHTML = '<p class="text-sm text-gray-500 ml-2">ไม่พบรายการ</p>';
+                return;
+            }
+            cardsData.forEach(card => {
+                let s = new Date(card.start).toLocaleString('th-TH', {day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'});
+                let e = new Date(card.end).toLocaleString('th-TH', {day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'});
+                container.innerHTML += `
+                    <div class="bg-white border border-gray-100 rounded-xl p-4 shadow-sm relative overflow-hidden">
+                        <div class="absolute top-0 left-0 w-1 h-full" style="background-color: ${card.color}"></div>
+                        <div class="pl-2">
+                            <div class="flex justify-between items-start mb-2">
+                                <h4 class="font-black text-gray-900 text-sm">${card.id}</h4>
+                                <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-gray-100 text-gray-600">${card.machine}</span>
+                            </div>
+                            <p class="text-xs text-gray-600 mb-1"><i class="fa-solid fa-user text-gray-400 w-4"></i> ผู้จอง: ${card.name}</p>
+                            <p class="text-xs text-gray-600 mb-1"><i class="fa-regular fa-clock text-gray-400 w-4"></i> เริ่ม: ${s}</p>
+                            <p class="text-xs text-gray-600"><i class="fa-solid fa-flag-checkered text-gray-400 w-4"></i> เสร็จ: ${e}</p>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        // ระบบติดตามสถานะ
+        async function checkStatus() {
+            const id = document.getElementById('track-id').value.trim();
+            if(!id) return;
+            const btn = document.querySelector('#modal-track button');
+            const resDiv = document.getElementById('track-result');
+            const loadDiv = document.getElementById('track-loading');
+            
+            btn.disabled = true; resDiv.classList.add('hidden'); loadDiv.classList.remove('hidden');
+
+            try {
+                const response = await fetch(SCRIPT_URL + "?action=track&id=" + encodeURIComponent(id));
+                const data = await response.json();
+                
+                loadDiv.classList.add('hidden'); resDiv.classList.remove('hidden');
+                
+                if(!data.found) {
+                    resDiv.innerHTML = `<div class="bg-red-50 text-red-600 p-4 rounded-xl text-center text-sm font-bold">ไม่พบข้อมูลรหัสงานนี้ในระบบ</div>`;
+                } else {
+                    let statusColor = data.status === 'อนุมัติ' ? 'bg-green-100 text-green-700' : (data.status === 'ไม่อนุมัติ' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700');
+                    let html = `<div class="bg-gray-50 border border-gray-200 rounded-xl p-4">
+                                  <div class="flex justify-between items-start mb-3">
+                                      <h4 class="font-black text-gray-900 text-lg">${data.id}</h4>
+                                      <span class="${statusColor} text-xs font-bold px-3 py-1 rounded-full">${data.status}</span>
+                                  </div>
+                                  <p class="text-sm text-gray-700 mb-1"><b>ชื่อผู้แจ้ง:</b> ${data.name}</p>`;
+                    if(data.type === 'equip') {
+                         html += `<p class="text-sm text-gray-700 mb-1"><b>ประเภท:</b> จองเครื่องมือ (${data.machine || 'ไม่ระบุ'})</p>`;
+                         let s = new Date(data.start).toLocaleString('th-TH', {day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit'});
+                         let e = new Date(data.end).toLocaleString('th-TH', {day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit'});
+                         html += `<p class="text-sm text-gray-700 mt-2 p-2 bg-white rounded border border-gray-100"><b>ใช้งาน:</b> ${s} - ${e}</p>`;
+                    } else {
+                         html += `<p class="text-sm text-gray-700 mb-1"><b>ประเภท:</b> ขอสแกนนิ้ว</p>`;
+                    }
+                    html += `</div>`;
+                    resDiv.innerHTML = html;
+                }
+            } catch (err) {
+                loadDiv.classList.add('hidden'); resDiv.classList.remove('hidden');
+                resDiv.innerHTML = `<div class="bg-red-50 text-red-600 p-4 rounded-xl text-center text-sm font-bold">เกิดข้อผิดพลาดในการเชื่อมต่อ</div>`;
+            }
+            btn.disabled = false;
+        }
+
+        // Sidebar & UI Logic
+        const sidebar = document.getElementById('sidebar');
+        const mobileOverlay = document.getElementById('mobile-overlay');
+
+        function toggleSidebar() {
+            if (sidebar.classList.contains('-translate-x-full')) {
+                sidebar.classList.remove('-translate-x-full'); mobileOverlay.classList.remove('hidden'); setTimeout(() => mobileOverlay.classList.remove('opacity-0'), 10);
+            } else {
+                sidebar.classList.add('-translate-x-full'); mobileOverlay.classList.add('opacity-0'); setTimeout(() => mobileOverlay.classList.add('hidden'), 300);
+            }
+        }
+
+        function switchTab(tabId, element) {
+            document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
+            if(element) element.classList.add('active');
+            document.getElementById('view-dashboard').classList.add('hidden'); document.getElementById('view-calendar').classList.add('hidden');
+            document.getElementById('view-' + tabId).classList.remove('hidden');
+            document.getElementById('page-title').innerText = tabId === 'dashboard' ? 'Overview' : 'Calendar';
+            
+            if(tabId === 'calendar' && calendarInstance) { setTimeout(() => { calendarInstance.render(); }, 100); }
+            if(window.innerWidth < 768) toggleSidebar();
+        }
+
+        const modalContainer = document.getElementById('modal-container');
+        const modalBackdrop = document.getElementById('modal-backdrop');
+
+        function openModal(modalId) {
+            document.querySelectorAll('.modal-content').forEach(el => { el.classList.add('hidden'); el.classList.remove('scale-100', 'opacity-100'); el.classList.add('scale-95', 'opacity-0'); });
+            modalContainer.classList.remove('hidden');
+            setTimeout(() => {
+                modalBackdrop.classList.remove('opacity-0');
+                const modal = document.getElementById(modalId);
+                modal.classList.remove('hidden');
+                setTimeout(() => { modal.classList.remove('scale-95', 'opacity-0'); modal.classList.add('scale-100', 'opacity-100'); }, 10);
+            }, 10);
+        }
+
+        function closeAllModals() {
+            document.querySelectorAll('.modal-content').forEach(el => { el.classList.remove('scale-100', 'opacity-100'); el.classList.add('scale-95', 'opacity-0'); });
+            modalBackdrop.classList.add('opacity-0');
+            setTimeout(() => { modalContainer.classList.add('hidden'); document.querySelectorAll('.modal-content').forEach(el => el.classList.add('hidden')); }, 300);
+        }
+
+        function handleStatusChange(selectElement, targetContainerId) {
+            const container = document.getElementById(targetContainerId);
+            const inputs = container.querySelectorAll('select');
+            if (selectElement.value === 'นักศึกษา ป.ตรี') {
+                container.classList.remove('hidden'); container.classList.add('grid');
+                inputs.forEach(input => input.required = true);
+            } else {
+                container.classList.add('hidden'); container.classList.remove('grid');
+                inputs.forEach(input => { input.required = false; input.value = ''; });
+            }
+        }
+
+        async function submitForm(event, formType) {
+            event.preventDefault();
+            const form = event.target;
+            const data = Object.fromEntries(new FormData(form).entries());
+
+            Swal.fire({ title: 'กำลังส่งข้อมูล...', allowOutsideClick: false, showConfirmButton: false, didOpen: () => { Swal.showLoading(); }});
+
+            try {
+                const response = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(data) });
+                const result = await response.json();
+                
+                if (result.status === 'success' && result.trackingId) {
+                    Swal.fire({ 
+                        icon: 'success', title: 'ส่งคำร้องสำเร็จ!', 
+                        html: `ข้อมูลของคุณถูกบันทึกแล้ว<br>รหัสติดตามสถานะของคุณคือ: <br><b style="font-size:1.5rem; color:#2563eb; margin:10px 0; display:block;">${result.trackingId}</b><span style="font-size:0.85rem; color:#ef4444;">* กรุณาบันทึกรหัสนี้ไว้เพื่อติดตามสถานะ</span>`, 
+                        confirmButtonColor: '#3b82f6', confirmButtonText: 'ตกลงรับทราบ' 
+                    }).then(() => {
+                        form.reset();
+                        document.getElementById('scan-student-fields').classList.add('hidden'); document.getElementById('scan-student-fields').classList.remove('grid');
+                        document.getElementById('equip-student-fields').classList.add('hidden'); document.getElementById('equip-student-fields').classList.remove('grid');
+                        closeAllModals();
+                        loadDashboardData(); 
+                    });
+                } else throw new Error(result.message || 'ระบบไม่ได้ส่งรหัสงานกลับมา');
+            } catch (error) {
+                Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: error.message, confirmButtonColor: '#ef4444' });
+            }
+        }
+    </script>
+</body>
+</html>
