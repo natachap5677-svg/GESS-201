@@ -559,4 +559,72 @@
             if(element) element.classList.add('active');
             document.getElementById('view-dashboard').classList.add('hidden'); document.getElementById('view-calendar').classList.add('hidden');
             document.getElementById('view-' + tabId).classList.remove('hidden');
-            document.getElementById('page-title').innerText = tabId === 'dashboard
+            document.getElementById('page-title').innerText = tabId === 'dashboard' ? 'Overview' : 'Calendar';
+            
+            if(tabId === 'calendar' && calendarInstance) { setTimeout(() => { calendarInstance.render(); }, 100); }
+            if(window.innerWidth < 768) toggleSidebar();
+        }
+
+        const modalContainer = document.getElementById('modal-container');
+        const modalBackdrop = document.getElementById('modal-backdrop');
+
+        function openModal(modalId) {
+            document.querySelectorAll('.modal-content').forEach(el => { el.classList.add('hidden'); el.classList.remove('scale-100', 'opacity-100'); el.classList.add('scale-95', 'opacity-0'); });
+            modalContainer.classList.remove('hidden');
+            setTimeout(() => {
+                modalBackdrop.classList.remove('opacity-0');
+                const modal = document.getElementById(modalId);
+                modal.classList.remove('hidden');
+                setTimeout(() => { modal.classList.remove('scale-95', 'opacity-0'); modal.classList.add('scale-100', 'opacity-100'); }, 10);
+            }, 10);
+        }
+
+        function closeAllModals() {
+            document.querySelectorAll('.modal-content').forEach(el => { el.classList.remove('scale-100', 'opacity-100'); el.classList.add('scale-95', 'opacity-0'); });
+            modalBackdrop.classList.add('opacity-0');
+            setTimeout(() => { modalContainer.classList.add('hidden'); document.querySelectorAll('.modal-content').forEach(el => el.classList.add('hidden')); }, 300);
+        }
+
+        function handleStatusChange(selectElement, targetContainerId) {
+            const container = document.getElementById(targetContainerId);
+            const inputs = container.querySelectorAll('select');
+            if (selectElement.value === 'นักศึกษา ป.ตรี') {
+                container.classList.remove('hidden'); container.classList.add('grid');
+                inputs.forEach(input => input.required = true);
+            } else {
+                container.classList.add('hidden'); container.classList.remove('grid');
+                inputs.forEach(input => { input.required = false; input.value = ''; });
+            }
+        }
+
+        async function submitForm(event, formType) {
+            event.preventDefault();
+            const form = event.target;
+            const data = Object.fromEntries(new FormData(form).entries());
+
+            Swal.fire({ title: 'กำลังส่งข้อมูล...', allowOutsideClick: false, showConfirmButton: false, didOpen: () => { Swal.showLoading(); }});
+
+            try {
+                const response = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(data) });
+                const result = await response.json();
+                
+                if (result.status === 'success' && result.trackingId) {
+                    Swal.fire({ 
+                        icon: 'success', title: 'ส่งคำร้องสำเร็จ!', 
+                        html: `ข้อมูลของคุณถูกบันทึกแล้ว<br>รหัสติดตามสถานะของคุณคือ: <br><b style="font-size:1.5rem; color:#2563eb; margin:10px 0; display:block;">${result.trackingId}</b><span style="font-size:0.85rem; color:#ef4444;">* กรุณาบันทึกรหัสนี้ไว้เพื่อติดตามสถานะ</span>`, 
+                        confirmButtonColor: '#3b82f6', confirmButtonText: 'ตกลงรับทราบ' 
+                    }).then(() => {
+                        form.reset();
+                        document.getElementById('scan-student-fields').classList.add('hidden'); document.getElementById('scan-student-fields').classList.remove('grid');
+                        document.getElementById('equip-student-fields').classList.add('hidden'); document.getElementById('equip-student-fields').classList.remove('grid');
+                        closeAllModals();
+                        loadDashboardData(); 
+                    });
+                } else throw new Error(result.message || 'ระบบไม่ได้ส่งรหัสงานกลับมา');
+            } catch (error) {
+                Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: error.message, confirmButtonColor: '#ef4444' });
+            }
+        }
+    </script>
+</body>
+</html>
