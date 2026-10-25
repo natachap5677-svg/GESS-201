@@ -349,7 +349,7 @@
                     }
                 }
                 
-                let imgHtml = imgUrl ? `<img src="${imgUrl}" class="w-full h-auto max-h-96 object-cover rounded-xl mb-4 mt-2 shadow-sm border border-gray-200" alt="รูปภาพประกอบ" ${fallbackAttr}>` : '';
+                let imgHtml = imgUrl ? `<img src="${imgUrl}" class="max-w-full h-auto max-h-[600px] object-contain mx-auto rounded-xl mb-4 mt-2 shadow-sm border border-gray-200" alt="รูปภาพประกอบ" ${fallbackAttr}>` : '';
                 let titleHtml = item.title ? `<h3 class="text-xl font-bold text-gray-900 mb-2 ${index !== 0 ? 'mt-8' : ''}">${item.title}</h3>` : '';
                 let spacingClass = (item.title || item.image || item.description) ? 'mb-4' : '';
                 
