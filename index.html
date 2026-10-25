@@ -28,7 +28,6 @@
         .fc-daygrid-event-dot { display: none !important; }
     </style>
 </head>
-<!-- แก้ไข: เปลี่ยน h-screen เป็น h-[100dvh] เพื่อรองรับแถบเมนูในมือถือ -->
 <body class="flex h-[100dvh] overflow-hidden text-gray-800 antialiased" onload="loadDashboardData()">
 
     <div id="mobile-overlay" class="fixed inset-0 bg-gray-900/50 z-40 hidden md:hidden transition-opacity opacity-0" onclick="toggleSidebar()"></div>
@@ -45,6 +44,14 @@
             <a href="#" onclick="openModal('modal-scan')" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-50"><i class="fa-solid fa-fingerprint w-5 text-center"></i> <span>ขอสแกนนิ้ว</span></a>
             <a href="#" onclick="openModal('modal-equip')" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-50"><i class="fa-solid fa-flask-vial w-5 text-center"></i> <span>จองเครื่องมือ</span></a>
             <a href="#" onclick="switchTab('calendar', this)" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-50"><i class="fa-regular fa-calendar-alt w-5 text-center"></i> <span>ปฏิทินการใช้งาน</span></a>
+            
+            <!-- เพิ่มปุ่มคู่มือในเมนูด้วย -->
+            <div class="mt-4">
+                <a href="#" onclick="openModal('modal-manual')" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors">
+                    <i class="fa-solid fa-book w-5 text-center"></i> <span>คู่มือการใช้งานเครื่อง</span>
+                </a>
+            </div>
+            
             <div class="mt-8">
                 <p class="px-3 text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Support</p>
                 <a href="#" onclick="openModal('modal-track')" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-50"><i class="fa-solid fa-magnifying-glass-chart w-5 text-center"></i> <span>ติดตามสถานะ</span></a>
@@ -64,7 +71,6 @@
             </div>
         </header>
 
-        <!-- แก้ไข: เพิ่ม pb-24 (พื้นที่เผื่อด้านล่างสุด) เพื่อให้เลื่อนจอในมือถือได้จนสุดโดยไม่โดนบัง -->
         <div class="flex-1 overflow-y-auto p-4 sm:p-8 pb-24">
             
             <!-- VIEW: Dashboard -->
@@ -104,6 +110,10 @@
                                 </button>
                                 <button onclick="openModal('modal-equip')" class="w-full flex items-center justify-between p-4 rounded-xl border border-gray-100 hover:border-emerald-300 transition-all group">
                                     <div class="flex items-center gap-3"><div class="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center"><i class="fa-solid fa-flask"></i></div><div class="text-left"><p class="font-bold text-sm text-gray-900">จองเครื่องมือ</p></div></div>
+                                </button>
+                                <!-- เพิ่มปุ่มคู่มือใน Quick Actions -->
+                                <button onclick="openModal('modal-manual')" class="w-full flex items-center justify-between p-4 rounded-xl border border-gray-100 hover:border-purple-300 transition-all group">
+                                    <div class="flex items-center gap-3"><div class="w-10 h-10 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center"><i class="fa-solid fa-book"></i></div><div class="text-left"><p class="font-bold text-sm text-gray-900">คู่มือการใช้งานเครื่อง</p></div></div>
                                 </button>
                             </div>
                         </div>
@@ -239,6 +249,22 @@
                 <div id="track-result" class="mt-6 hidden animate-fade-in"></div>
             </div>
         </div>
+
+        <!-- 4. Modal: คู่มือการใช้งานเครื่อง (ใหม่) -->
+        <div id="modal-manual" class="modal-content relative w-full max-w-md bg-white rounded-3xl shadow-2xl transform scale-95 opacity-0 transition-all flex flex-col hidden">
+            <div class="flex justify-between items-center p-5 border-b border-gray-100">
+                <h2 class="text-lg font-bold text-gray-900 flex items-center gap-3">
+                    <span class="w-8 h-8 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center"><i class="fa-solid fa-book"></i></span> คู่มือการใช้งานเครื่อง
+                </h2>
+                <button onclick="closeAllModals()" class="text-gray-400 hover:text-red-500 w-8 h-8"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="p-5 sm:p-6">
+                <p class="text-sm text-gray-500 mb-4">เลือกเครื่องจักรที่ต้องการเพื่ออ่านคู่มือการใช้งาน (PDF)</p>
+                <div id="manual-list" class="space-y-2">
+                    <div class="text-center text-gray-400 py-4"><i class="fa-solid fa-spinner fa-spin text-xl"></i><p class="text-sm mt-2">กำลังโหลดคู่มือ...</p></div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <style> .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; } @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } } </style>
@@ -264,6 +290,9 @@
                 renderAnnouncements(data.announcements || []);
                 populateMachineDropdowns(data.machines || []);
                 
+                // เรนเดอร์รายการคู่มือ (ใหม่)
+                renderManualList(data.machines || []);
+                
                 allCalendarEvents = data.events || [];
                 allCalendarCards = data.cards || [];
                 
@@ -277,6 +306,37 @@
             }
         }
 
+        // ฟังก์ชันวาดรายการคู่มือ
+        function renderManualList(machines) {
+            const listContainer = document.getElementById('manual-list');
+            listContainer.innerHTML = '';
+            
+            if(machines.length === 0) {
+                listContainer.innerHTML = '<p class="text-sm text-gray-500 text-center">ยังไม่มีข้อมูลเครื่องจักร</p>';
+                return;
+            }
+            
+            let hasManual = false;
+            machines.forEach(machine => {
+                if (machine.manual_link) { // ถ้ามีลิงก์
+                    hasManual = true;
+                    listContainer.innerHTML += `
+                        <a href="${machine.manual_link}" target="_blank" class="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100 hover:bg-purple-50 hover:border-purple-200 transition group">
+                            <div class="flex items-center gap-3">
+                                <i class="fa-solid fa-file-pdf text-red-500 text-lg"></i>
+                                <span class="font-bold text-sm text-gray-800 group-hover:text-purple-700">${machine.name}</span>
+                            </div>
+                            <i class="fa-solid fa-arrow-up-right-from-square text-gray-400 group-hover:text-purple-500 text-xs"></i>
+                        </a>
+                    `;
+                }
+            });
+            
+            if(!hasManual) {
+                listContainer.innerHTML = '<p class="text-sm text-gray-500 text-center">ยังไม่ได้อัปโหลดคู่มือเข้าระบบ</p>';
+            }
+        }
+
         function populateMachineDropdowns(machines) {
             const equipSelect = document.getElementById('equip-select');
             const calendarFilter = document.getElementById('calendar-filter');
@@ -286,8 +346,8 @@
             
             if (machines.length > 0) {
                 machines.forEach(machine => {
-                    equipSelect.innerHTML += `<option value="${machine}">${machine}</option>`;
-                    calendarFilter.innerHTML += `<option value="${machine}">${machine}</option>`;
+                    equipSelect.innerHTML += `<option value="${machine.name}">${machine.name}</option>`;
+                    calendarFilter.innerHTML += `<option value="${machine.name}">${machine.name}</option>`;
                 });
             } else {
                 equipSelect.innerHTML = '<option value="" disabled selected>-- ไม่มีข้อมูลในฐานระบบ --</option>';
