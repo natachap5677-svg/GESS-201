@@ -323,7 +323,7 @@
             }
         }
 
-        // ฟังก์ชันวาดข้อมูลหน้า "เกี่ยวกับเรา" (ดึงรูปจาก Google Drive อัตโนมัติและจัดเรียงหลายบรรทัด)
+        // ฟังก์ชันวาดข้อมูลหน้า "เกี่ยวกับเรา" (ดึงรูปและ Rich Text ที่ประมวลผลแล้วจาก Backend)
         function renderAboutUs(items) {
             const container = document.getElementById('about-content-container');
             container.innerHTML = '';
@@ -335,7 +335,8 @@
             
             let contentHtml = '';
             items.forEach((item, index) => {
-                let descHtml = item.description ? item.description.replace(/\n/g, '<br>') : '';
+                // ข้อมูล description ถูกแปลงเป็น HTML มาแล้วจาก Google Apps Script 
+                let descHtml = item.description || ''; 
                 
                 let fallbackAttr = `onerror="this.style.display='none'"`;
                 let imgUrl = item.image;
@@ -343,12 +344,12 @@
                     let match = imgUrl.match(/[-\w]{25,}/); 
                     if (match) {
                         let fileId = match[0];
-                        // วิธีการดึงรูปภาพจาก Google Drive
                         imgUrl = 'https://lh3.googleusercontent.com/d/' + fileId;
                         fallbackAttr = `onerror="this.onerror=null; this.src='https://drive.google.com/thumbnail?id=${fileId}&sz=w1000';"`;
                     }
                 }
                 
+                // เปลี่ยนคลาสภาพเป็น max-w-full h-auto max-h-[600px] object-contain mx-auto เพื่อป้องกันภาพแนวตั้งโดนตัด
                 let imgHtml = imgUrl ? `<img src="${imgUrl}" class="max-w-full h-auto max-h-[600px] object-contain mx-auto rounded-xl mb-4 mt-2 shadow-sm border border-gray-200" alt="รูปภาพประกอบ" ${fallbackAttr}>` : '';
                 let titleHtml = item.title ? `<h3 class="text-xl font-bold text-gray-900 mb-2 ${index !== 0 ? 'mt-8' : ''}">${item.title}</h3>` : '';
                 let spacingClass = (item.title || item.image || item.description) ? 'mb-4' : '';
@@ -358,13 +359,12 @@
                         <div class="${spacingClass}">
                             ${titleHtml}
                             ${imgHtml}
-                            ${descHtml ? `<p class="text-gray-600 leading-relaxed text-sm sm:text-base">${descHtml}</p>` : ''}
+                            ${descHtml ? `<div class="leading-relaxed text-sm sm:text-base break-words text-gray-700">${descHtml}</div>` : ''}
                         </div>
                     `;
                 }
             });
             
-            // นำทุกแถวมารวมกันในกล่องเดียว เพื่อให้อ่านต่อกันเป็นบทความ
             if(contentHtml) {
                 container.innerHTML = `<div class="bg-gray-50 p-4 sm:p-6 rounded-2xl">${contentHtml}</div>`;
             } else {
