@@ -323,7 +323,6 @@
             }
         }
 
-        // ฟังก์ชันวาดข้อมูลหน้า "เกี่ยวกับเรา" (ดึงรูปและ Rich Text ที่ประมวลผลแล้วจาก Backend)
         function renderAboutUs(items) {
             const container = document.getElementById('about-content-container');
             container.innerHTML = '';
@@ -335,7 +334,6 @@
             
             let contentHtml = '';
             items.forEach((item, index) => {
-                // ข้อมูล description ถูกแปลงเป็น HTML มาแล้วจาก Google Apps Script 
                 let descHtml = item.description || ''; 
                 
                 let fallbackAttr = `onerror="this.style.display='none'"`;
@@ -349,16 +347,21 @@
                     }
                 }
                 
-                // เปลี่ยนคลาสภาพเป็น max-w-full h-auto max-h-[600px] object-contain mx-auto เพื่อป้องกันภาพแนวตั้งโดนตัด
-                let imgHtml = imgUrl ? `<img src="${imgUrl}" class="max-w-full h-auto max-h-[600px] object-contain mx-auto rounded-xl mb-4 mt-2 shadow-sm border border-gray-200" alt="รูปภาพประกอบ" ${fallbackAttr}>` : '';
+                let imgMargin = item.caption ? 'mb-1' : 'mb-4'; // ปรับ margin ถ้ารูปมีคำบรรยาย
+                let imgHtml = imgUrl ? `<img src="${imgUrl}" class="max-w-full h-auto max-h-[600px] object-contain mx-auto rounded-xl mt-2 shadow-sm border border-gray-200 ${imgMargin}" alt="รูปภาพประกอบ" ${fallbackAttr}>` : '';
+                
+                // เพิ่มการสร้างคำบรรยายใต้ภาพ
+                let captionHtml = item.caption ? `<div class="text-center text-sm text-gray-500 mb-4 px-4">${item.caption}</div>` : '';
+                
                 let titleHtml = item.title ? `<h3 class="text-xl font-bold text-gray-900 mb-2 ${index !== 0 ? 'mt-8' : ''}">${item.title}</h3>` : '';
-                let spacingClass = (item.title || item.image || item.description) ? 'mb-4' : '';
+                let spacingClass = (item.title || item.image || item.description || item.caption) ? 'mb-4' : '';
                 
                 if(spacingClass) {
                     contentHtml += `
                         <div class="${spacingClass}">
                             ${titleHtml}
                             ${imgHtml}
+                            ${captionHtml}
                             ${descHtml ? `<div class="leading-relaxed text-sm sm:text-base break-words text-gray-700">${descHtml}</div>` : ''}
                         </div>
                     `;
