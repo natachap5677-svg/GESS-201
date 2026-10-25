@@ -66,7 +66,7 @@
                 <h2 id="page-title" class="text-xl sm:text-2xl font-bold text-gray-800">Overview</h2>
             </div>
             
-            <!-- เพิ่มปุ่มเกี่ยวกับเราที่นี่ -->
+            <!-- ปุ่มเกี่ยวกับเรา & Sync Status -->
             <div class="flex items-center gap-2 sm:gap-4">
                 <button onclick="openModal('modal-about')" class="flex items-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-600 px-3 py-1.5 sm:py-2 rounded-full transition-colors border border-blue-200 shadow-sm">
                     <i class="fa-solid fa-circle-info"></i><span class="text-sm font-bold hidden sm:inline">เกี่ยวกับเรา</span>
@@ -269,7 +269,7 @@
             </div>
         </div>
 
-        <!-- 5. Modal: เกี่ยวกับเรา (ใหม่) -->
+        <!-- 5. Modal: เกี่ยวกับเรา -->
         <div id="modal-about" class="modal-content relative w-full max-w-3xl bg-white rounded-3xl shadow-2xl transform scale-95 opacity-0 transition-all flex flex-col max-h-[90vh] hidden">
             <div class="flex justify-between items-center p-5 border-b border-gray-100">
                 <h2 class="text-lg font-bold text-gray-900 flex items-center gap-3">
@@ -277,7 +277,6 @@
                 </h2>
                 <button onclick="closeAllModals()" class="text-gray-400 hover:text-red-500 w-8 h-8"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
-            <!-- ส่วนแสดงผลเนื้อหา (รูปภาพและข้อความ) จะถูกสร้างด้วย JS -->
             <div class="p-5 sm:p-8 overflow-y-auto" id="about-content-container">
                 <div class="text-center text-gray-400 py-10"><i class="fa-solid fa-spinner fa-spin text-3xl"></i><p class="mt-3">กำลังโหลดข้อมูล...</p></div>
             </div>
@@ -309,7 +308,6 @@
                 populateMachineDropdowns(data.machines || []);
                 renderManualList(data.machines || []);
                 
-                // เรนเดอร์ข้อมูลเกี่ยวกับเรา
                 renderAboutUs(data.about || []);
                 
                 allCalendarEvents = data.events || [];
@@ -326,7 +324,7 @@
             }
         }
 
-        // ฟังก์ชันวาดข้อมูลหน้า "เกี่ยวกับเรา"
+        // ฟังก์ชันวาดข้อมูลหน้า "เกี่ยวกับเรา" พร้อมแปลงลิงก์ Google Drive ให้อัตโนมัติ
         function renderAboutUs(items) {
             const container = document.getElementById('about-content-container');
             container.innerHTML = '';
@@ -337,14 +335,24 @@
             }
             
             items.forEach(item => {
-                // เปลี่ยนการกด Enter ใน Sheet ให้เป็นเว้นบรรทัดในเว็บ
                 let descHtml = item.description ? item.description.replace(/\n/g, '<br>') : '';
-                let imgHtml = item.image ? `<img src="${item.image}" class="w-full h-auto max-h-72 object-cover rounded-2xl mb-4 shadow-sm border border-gray-100" alt="about image">` : '';
+                
+                // แปลงลิงก์แชร์ Google Drive เป็นลิงก์สำหรับดึงรูปภาพโดยตรง
+                let imgUrl = item.image;
+                if (imgUrl && imgUrl.includes('drive.google.com')) {
+                    let match = imgUrl.match(/[-\w]{25,}/); // ค้นหารหัสไฟล์ ID ของ Drive
+                    if (match) {
+                        imgUrl = 'https://drive.google.com/uc?export=view&id=' + match[0];
+                    }
+                }
+                
+                let imgHtml = imgUrl ? `<img src="${imgUrl}" class="w-full h-auto max-h-72 object-cover rounded-2xl mb-4 shadow-sm border border-gray-100" alt="about image" onerror="this.style.display='none'">` : '';
+                let titleHtml = item.title ? `<h3 class="text-xl font-bold text-gray-900 mb-2">${item.title}</h3>` : '';
                 
                 container.innerHTML += `
                     <div class="mb-8 last:mb-0 bg-gray-50 p-4 sm:p-6 rounded-2xl">
                         ${imgHtml}
-                        <h3 class="text-xl font-bold text-gray-900 mb-2">${item.title}</h3>
+                        ${titleHtml}
                         <p class="text-gray-600 leading-relaxed text-sm sm:text-base">${descHtml}</p>
                     </div>
                 `;
