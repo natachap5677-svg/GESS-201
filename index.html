@@ -66,7 +66,6 @@
                 <h2 id="page-title" class="text-xl sm:text-2xl font-bold text-gray-800">Overview</h2>
             </div>
             
-            <!-- ปุ่มเกี่ยวกับเรา & Sync Status -->
             <div class="flex items-center gap-2 sm:gap-4">
                 <button onclick="openModal('modal-about')" class="flex items-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-600 px-3 py-1.5 sm:py-2 rounded-full transition-colors border border-blue-200 shadow-sm">
                     <i class="fa-solid fa-circle-info"></i><span class="text-sm font-bold hidden sm:inline">เกี่ยวกับเรา</span>
@@ -324,7 +323,7 @@
             }
         }
 
-        // ฟังก์ชันวาดข้อมูลหน้า "เกี่ยวกับเรา" พร้อมแปลงลิงก์ Google Drive ให้อัตโนมัติ
+        // ฟังก์ชันวาดข้อมูลหน้า "เกี่ยวกับเรา" (ดึงรูปจาก Google Drive อัตโนมัติและจัดเรียงหลายบรรทัด)
         function renderAboutUs(items) {
             const container = document.getElementById('about-content-container');
             container.innerHTML = '';
@@ -334,29 +333,43 @@
                 return;
             }
             
-            items.forEach(item => {
+            let contentHtml = '';
+            items.forEach((item, index) => {
                 let descHtml = item.description ? item.description.replace(/\n/g, '<br>') : '';
                 
-                // แปลงลิงก์แชร์ Google Drive เป็นลิงก์สำหรับดึงรูปภาพโดยตรง
+                let fallbackAttr = `onerror="this.style.display='none'"`;
                 let imgUrl = item.image;
                 if (imgUrl && imgUrl.includes('drive.google.com')) {
-                    let match = imgUrl.match(/[-\w]{25,}/); // ค้นหารหัสไฟล์ ID ของ Drive
+                    let match = imgUrl.match(/[-\w]{25,}/); 
                     if (match) {
-                        imgUrl = 'https://drive.google.com/uc?export=view&id=' + match[0];
+                        let fileId = match[0];
+                        // วิธีการดึงรูปภาพจาก Google Drive
+                        imgUrl = 'https://lh3.googleusercontent.com/d/' + fileId;
+                        fallbackAttr = `onerror="this.onerror=null; this.src='https://drive.google.com/thumbnail?id=${fileId}&sz=w1000';"`;
                     }
                 }
                 
-                let imgHtml = imgUrl ? `<img src="${imgUrl}" class="w-full h-auto max-h-72 object-cover rounded-2xl mb-4 shadow-sm border border-gray-100" alt="about image" onerror="this.style.display='none'">` : '';
-                let titleHtml = item.title ? `<h3 class="text-xl font-bold text-gray-900 mb-2">${item.title}</h3>` : '';
+                let imgHtml = imgUrl ? `<img src="${imgUrl}" class="w-full h-auto max-h-96 object-cover rounded-xl mb-4 mt-2 shadow-sm border border-gray-200" alt="รูปภาพประกอบ" ${fallbackAttr}>` : '';
+                let titleHtml = item.title ? `<h3 class="text-xl font-bold text-gray-900 mb-2 ${index !== 0 ? 'mt-8' : ''}">${item.title}</h3>` : '';
+                let spacingClass = (item.title || item.image || item.description) ? 'mb-4' : '';
                 
-                container.innerHTML += `
-                    <div class="mb-8 last:mb-0 bg-gray-50 p-4 sm:p-6 rounded-2xl">
-                        ${imgHtml}
-                        ${titleHtml}
-                        <p class="text-gray-600 leading-relaxed text-sm sm:text-base">${descHtml}</p>
-                    </div>
-                `;
+                if(spacingClass) {
+                    contentHtml += `
+                        <div class="${spacingClass}">
+                            ${titleHtml}
+                            ${imgHtml}
+                            ${descHtml ? `<p class="text-gray-600 leading-relaxed text-sm sm:text-base">${descHtml}</p>` : ''}
+                        </div>
+                    `;
+                }
             });
+            
+            // นำทุกแถวมารวมกันในกล่องเดียว เพื่อให้อ่านต่อกันเป็นบทความ
+            if(contentHtml) {
+                container.innerHTML = `<div class="bg-gray-50 p-4 sm:p-6 rounded-2xl">${contentHtml}</div>`;
+            } else {
+                container.innerHTML = '<div class="text-center text-gray-500 py-10">ยังไม่มีข้อมูลในระบบ</div>';
+            }
         }
 
         function renderManualList(machines) {
@@ -546,72 +559,4 @@
             if(element) element.classList.add('active');
             document.getElementById('view-dashboard').classList.add('hidden'); document.getElementById('view-calendar').classList.add('hidden');
             document.getElementById('view-' + tabId).classList.remove('hidden');
-            document.getElementById('page-title').innerText = tabId === 'dashboard' ? 'Overview' : 'Calendar';
-            
-            if(tabId === 'calendar' && calendarInstance) { setTimeout(() => { calendarInstance.render(); }, 100); }
-            if(window.innerWidth < 768) toggleSidebar();
-        }
-
-        const modalContainer = document.getElementById('modal-container');
-        const modalBackdrop = document.getElementById('modal-backdrop');
-
-        function openModal(modalId) {
-            document.querySelectorAll('.modal-content').forEach(el => { el.classList.add('hidden'); el.classList.remove('scale-100', 'opacity-100'); el.classList.add('scale-95', 'opacity-0'); });
-            modalContainer.classList.remove('hidden');
-            setTimeout(() => {
-                modalBackdrop.classList.remove('opacity-0');
-                const modal = document.getElementById(modalId);
-                modal.classList.remove('hidden');
-                setTimeout(() => { modal.classList.remove('scale-95', 'opacity-0'); modal.classList.add('scale-100', 'opacity-100'); }, 10);
-            }, 10);
-        }
-
-        function closeAllModals() {
-            document.querySelectorAll('.modal-content').forEach(el => { el.classList.remove('scale-100', 'opacity-100'); el.classList.add('scale-95', 'opacity-0'); });
-            modalBackdrop.classList.add('opacity-0');
-            setTimeout(() => { modalContainer.classList.add('hidden'); document.querySelectorAll('.modal-content').forEach(el => el.classList.add('hidden')); }, 300);
-        }
-
-        function handleStatusChange(selectElement, targetContainerId) {
-            const container = document.getElementById(targetContainerId);
-            const inputs = container.querySelectorAll('select');
-            if (selectElement.value === 'นักศึกษา ป.ตรี') {
-                container.classList.remove('hidden'); container.classList.add('grid');
-                inputs.forEach(input => input.required = true);
-            } else {
-                container.classList.add('hidden'); container.classList.remove('grid');
-                inputs.forEach(input => { input.required = false; input.value = ''; });
-            }
-        }
-
-        async function submitForm(event, formType) {
-            event.preventDefault();
-            const form = event.target;
-            const data = Object.fromEntries(new FormData(form).entries());
-
-            Swal.fire({ title: 'กำลังส่งข้อมูล...', allowOutsideClick: false, showConfirmButton: false, didOpen: () => { Swal.showLoading(); }});
-
-            try {
-                const response = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(data) });
-                const result = await response.json();
-                
-                if (result.status === 'success' && result.trackingId) {
-                    Swal.fire({ 
-                        icon: 'success', title: 'ส่งคำร้องสำเร็จ!', 
-                        html: `ข้อมูลของคุณถูกบันทึกแล้ว<br>รหัสติดตามสถานะของคุณคือ: <br><b style="font-size:1.5rem; color:#2563eb; margin:10px 0; display:block;">${result.trackingId}</b><span style="font-size:0.85rem; color:#ef4444;">* กรุณาบันทึกรหัสนี้ไว้เพื่อติดตามสถานะ</span>`, 
-                        confirmButtonColor: '#3b82f6', confirmButtonText: 'ตกลงรับทราบ' 
-                    }).then(() => {
-                        form.reset();
-                        document.getElementById('scan-student-fields').classList.add('hidden'); document.getElementById('scan-student-fields').classList.remove('grid');
-                        document.getElementById('equip-student-fields').classList.add('hidden'); document.getElementById('equip-student-fields').classList.remove('grid');
-                        closeAllModals();
-                        loadDashboardData(); 
-                    });
-                } else throw new Error(result.message || 'ระบบไม่ได้ส่งรหัสงานกลับมา');
-            } catch (error) {
-                Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: error.message, confirmButtonColor: '#ef4444' });
-            }
-        }
-    </script>
-</body>
-</html>
+            document.getElementById('page-title').innerText = tabId === 'dashboard
